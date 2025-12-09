@@ -21,6 +21,10 @@ const flashcardSetSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    isPublic: {
+        type: Boolean,
+        default: false
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

@@ -30,13 +30,15 @@ function calculateSM2(quality, prevEaseFactor, prevInterval, prevRepetitions) {
 // Get cards due for review
 router.get('/:setId', auth, async (req, res) => {
     try {
-        const set = await FlashcardSet.findOne({
-            _id: req.params.setId,
-            userId: req.user._id
-        });
+        const set = await FlashcardSet.findById(req.params.setId);
 
         if (!set) {
             return res.status(404).json({ message: 'Set not found' });
+        }
+
+        // Access check: Owner or Public
+        if (set.userId.toString() !== req.user._id.toString() && !set.isPublic) {
+            return res.status(403).json({ message: 'Access denied' });
         }
 
         const now = new Date();
@@ -89,13 +91,15 @@ router.post('/:setId/review', auth, async (req, res) => {
     try {
         const { cardIndex, quality } = req.body;
 
-        const set = await FlashcardSet.findOne({
-            _id: req.params.setId,
-            userId: req.user._id
-        });
+        const set = await FlashcardSet.findById(req.params.setId);
 
         if (!set) {
             return res.status(404).json({ message: 'Set not found' });
+        }
+
+        // Access check
+        if (set.userId.toString() !== req.user._id.toString() && !set.isPublic) {
+            return res.status(403).json({ message: 'Access denied' });
         }
 
         let progress = await StudyProgress.findOne({
