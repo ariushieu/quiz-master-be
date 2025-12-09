@@ -106,4 +106,30 @@ router.get('/user/:username', async (req, res) => {
     }
 });
 
+// Claim quest badge
+// Claim quest badge
+router.post('/claim-quest', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        const badgeId = 'newcomer';
+
+        // Ensure achievements array exists
+        if (!user.achievements) {
+            user.achievements = [];
+        }
+
+        if (user.achievements.includes(badgeId)) {
+            // If already claimed, just return success
+            return res.json({ success: true, message: 'Achievement already owned', badge: ACHIEVEMENTS[badgeId] });
+        }
+
+        user.achievements.push(badgeId);
+
+        await user.save();
+        res.json({ success: true, message: 'Achievement granted', badge: ACHIEVEMENTS[badgeId] });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 export default router;

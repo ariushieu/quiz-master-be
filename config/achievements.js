@@ -27,6 +27,15 @@ export const SPECIAL_BADGES = {
 
 // Regular achievements - auto-unlocked based on stats
 export const ACHIEVEMENTS = {
+    // Newcomer Quest
+    newcomer: {
+        id: 'newcomer',
+        name: 'Newcomer',
+        description: 'Hoàn thành nhiệm vụ tân thủ',
+        icon: '🚀',
+        check: (stats) => false // Manually claimed via quest
+    },
+
     // Card milestones
     first_card: {
         id: 'first_card',
