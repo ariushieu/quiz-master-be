@@ -58,6 +58,59 @@ const IELTS_WORDS = [
     { term: "Collapse (v)", definition: "Sụp đổ (to fall down suddenly because of pressure or having no strength or support)." }
 ];
 
+const IELTS_SYNONYMS = [
+    { term: "important", definition: "crucial, significant - quan trọng" },
+    { term: "common", definition: "universal, ubiquitous - phổ biến" },
+    { term: "abundant", definition: "ample, plentiful - dồi dào" },
+    { term: "stick", definition: "adhere, cling - gắn với" },
+    { term: "neglect", definition: "ignore - không quan tâm" },
+    { term: "near", definition: "adjacent, adjoin - gần" },
+    { term: "pursue", definition: "woo, seek - theo đuổi" },
+    { term: "accurate", definition: "precise, exact - chính xác" },
+    { term: "vague", definition: "obscure - mơ hồ" },
+    { term: "top", definition: "peak, summit - đỉnh" },
+    { term: "competitor", definition: "rival, opponent - đối thủ" },
+    { term: "blame", definition: "condemn - đổ lỗi" },
+    { term: "opinion", definition: "perspective, standpoint - quan điểm" },
+    { term: "fame", definition: "prestige, reputation - danh tiếng" },
+    { term: "build", definition: "erect, establish - xây dựng" },
+    { term: "insult", definition: "humiliate - xúc phạm" },
+    { term: "complain", definition: "grumble - phàn nàn" },
+    { term: "primary", definition: "radical, fundamental - chính" },
+    { term: "relieve", definition: "alleviate - xoa dịu" },
+    { term: "force", definition: "coerce into, compel - bắt ép" },
+    { term: "enlarge", definition: "magnify - mở rộng" },
+    { term: "complex", definition: "intricate - phức tạp" },
+    { term: "lonely", definition: "solitary - cô đơn" },
+    { term: "small", definition: "minuscule, minute - nhỏ bé" },
+    { term: "praise", definition: "extol, compliment - ca ngợi" },
+    { term: "hard-working", definition: "assiduous - chăm chỉ" },
+    { term: "difficult", definition: "arduous - khó khăn" },
+    { term: "poor (soil)", definition: "barren, infertile - cằn cỗi" },
+    { term: "fragile", definition: "brittle, vulnerable - dễ tổn thương" },
+    { term: "show", definition: "demonstrate - thể hiện" },
+    { term: "big", definition: "massive, colossal, tremendous - to lớn" },
+    { term: "avoid", definition: "shun - tránh" },
+    { term: "fair", definition: "impartial - công bằng" },
+    { term: "attack", definition: "assault - tấn công" },
+    { term: "dislike", definition: "abhor, loathe - không thích" },
+    { term: "ruin", definition: "devastate - phá hủy" },
+    { term: "always", definition: "invariably - luôn luôn" },
+    { term: "forever", definition: "perpetual, immutable - mãi mãi" },
+    { term: "surprise", definition: "startle, astound, astonish - bất ngờ" },
+    { term: "enthusiasm", definition: "zeal, fervency - nhiệt huyết" },
+    { term: "quiet", definition: "tranquil, serene - bình lặng" },
+    { term: "expensive", definition: "exorbitant - đắt đỏ" },
+    { term: "luxurious", definition: "lavish, sumptuous - sang chảnh" },
+    { term: "boring", definition: "tedious - nhàm chán" },
+    { term: "respect", definition: "esteem - tôn trọng" },
+    { term: "worry", definition: "fret - lo lắng" },
+    { term: "cold", definition: "chilly, icy - lạnh" },
+    { term: "hot", definition: "boiling - nóng" },
+    { term: "dangerous", definition: "perilous - nguy hiểm" },
+    { term: "only", definition: "unique, distinctive - độc đáo" }
+];
+
 const seedDB = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URI);
@@ -99,6 +152,30 @@ const seedDB = async () => {
             ieltsSet.isPublic = true;
             await ieltsSet.save();
             console.log('✅ Updated existing set (and ownership) with cleaned data');
+        }
+
+        // 3. Create or Update IELTS Synonyms Set
+        const synonymSetTitle = "50 CỤM TỪ ĐỒNG NGHĨA HAY XUẤT HIỆN TRONG BÀI THI IELTS - Part 1";
+
+        let synonymSet = await FlashcardSet.findOne({ title: synonymSetTitle });
+
+        if (!synonymSet) {
+            synonymSet = new FlashcardSet({
+                title: synonymSetTitle,
+                description: "50 cặp từ đồng nghĩa phổ biến trong bài thi IELTS. Giúp nâng cao vốn từ vựng và khả năng paraphrase.",
+                userId: adminUser._id,
+                cards: IELTS_SYNONYMS,
+                isPublic: true
+            });
+            await synonymSet.save();
+            console.log(`✅ Created Set: "${synonymSetTitle}" with ${IELTS_SYNONYMS.length} words`);
+        } else {
+            console.log(`ℹ️ Set "${synonymSetTitle}" already exists - Updating...`);
+            synonymSet.userId = adminUser._id;
+            synonymSet.cards = IELTS_SYNONYMS;
+            synonymSet.isPublic = true;
+            await synonymSet.save();
+            console.log('✅ Updated existing synonyms set with new data');
         }
 
         console.log('🎉 Seeding completed successfully!');
