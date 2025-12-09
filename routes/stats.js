@@ -1,7 +1,7 @@
 import express from 'express';
 import { auth } from '../middleware/auth.js';
 import User from '../models/User.js';
-import { ACHIEVEMENTS, getAchievementsStatus } from '../config/achievements.js';
+import { ACHIEVEMENTS, SPECIAL_BADGES, getAchievementsStatus, getSpecialBadgesStatus, getUnlockedSpecialBadges } from '../config/achievements.js';
 
 const router = express.Router();
 
@@ -26,6 +26,8 @@ router.get('/me', auth, async (req, res) => {
             },
             achievementsCount: user.achievements?.length || 0,
             totalAchievements: Object.keys(ACHIEVEMENTS).length,
+            specialBadgesCount: user.specialBadges?.length || 0,
+            totalSpecialBadges: Object.keys(SPECIAL_BADGES).length,
             memberSince: user.createdAt
         });
     } catch (error) {
@@ -33,7 +35,7 @@ router.get('/me', auth, async (req, res) => {
     }
 });
 
-// Get achievements for current user
+// Get achievements for current user (includes special badges)
 router.get('/achievements', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
@@ -42,7 +44,12 @@ router.get('/achievements', auth, async (req, res) => {
         }
 
         const achievements = getAchievementsStatus(user);
-        res.json(achievements);
+        const specialBadges = getSpecialBadgesStatus(user);
+
+        res.json({
+            achievements,
+            specialBadges
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -77,7 +84,7 @@ router.get('/leaderboard', auth, async (req, res) => {
 router.get('/user/:username', async (req, res) => {
     try {
         const user = await User.findOne({ username: req.params.username })
-            .select('username avatar stats achievements createdAt');
+            .select('username avatar stats achievements specialBadges createdAt');
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -91,6 +98,7 @@ router.get('/user/:username', async (req, res) => {
             avatar: user.avatar,
             stats: user.stats,
             achievements: unlockedAchievements,
+            specialBadges: getUnlockedSpecialBadges(user),
             memberSince: user.createdAt
         });
     } catch (error) {

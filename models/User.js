@@ -44,6 +44,18 @@ const userSchema = new mongoose.Schema({
     },
     achievements: [{
         type: String
+    }],
+    // Role for admin access
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
+    // Special badges - granted by admin
+    specialBadges: [{
+        badgeId: { type: String, required: true },
+        grantedAt: { type: Date, default: Date.now },
+        grantedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
     }]
 });
 

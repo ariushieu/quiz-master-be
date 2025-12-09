@@ -1,5 +1,31 @@
 // Achievement definitions - NO XP related
 
+// Special badges - manually granted by admin only
+export const SPECIAL_BADGES = {
+    founder: {
+        id: 'founder',
+        name: 'Founder',
+        description: 'Người sáng lập QuizMaster',
+        icon: '⭐',
+        exclusive: true
+    },
+    beta_tester: {
+        id: 'beta_tester',
+        name: 'Beta Tester',
+        description: 'Người thử nghiệm đầu tiên',
+        icon: '🧪',
+        exclusive: true
+    },
+    contributor: {
+        id: 'contributor',
+        name: 'Contributor',
+        description: 'Đóng góp cho dự án',
+        icon: '💝',
+        exclusive: true
+    }
+};
+
+// Regular achievements - auto-unlocked based on stats
 export const ACHIEVEMENTS = {
     // Card milestones
     first_card: {
@@ -102,4 +128,31 @@ export function getAchievementsStatus(user) {
         unlocked: existingAchievements.includes(a.id),
         check: undefined
     }));
+}
+
+// Get special badges status for a user
+export function getSpecialBadgesStatus(user) {
+    const userBadges = user.specialBadges || [];
+    const userBadgeIds = userBadges.map(b => b.badgeId);
+
+    return Object.values(SPECIAL_BADGES).map(badge => ({
+        ...badge,
+        unlocked: userBadgeIds.includes(badge.id),
+        grantedAt: userBadges.find(b => b.badgeId === badge.id)?.grantedAt || null
+    }));
+}
+
+// Get only unlocked special badges for a user
+export function getUnlockedSpecialBadges(user) {
+    const userBadges = user.specialBadges || [];
+
+    return userBadges.map(ub => {
+        const badge = SPECIAL_BADGES[ub.badgeId];
+        if (!badge) return null;
+        return {
+            ...badge,
+            unlocked: true,
+            grantedAt: ub.grantedAt
+        };
+    }).filter(Boolean);
 }
