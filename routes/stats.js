@@ -60,7 +60,11 @@ router.get('/leaderboard', auth, async (req, res) => {
     try {
         const users = await User.find()
             .select('username avatar stats.xp stats.totalCardsStudied stats.currentStreak stats.longestStreak achievements')
-            .sort({ 'stats.currentStreak': -1, 'stats.longestStreak': -1 })
+            .sort({
+                'stats.currentStreak': -1,
+                'stats.totalCardsStudied': -1,
+                'stats.longestStreak': -1
+            })
             .limit(20);
 
         const leaderboard = users.map((user, index) => ({
