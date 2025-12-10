@@ -27,6 +27,15 @@ export const SPECIAL_BADGES = {
 
 // Regular achievements - auto-unlocked based on stats
 export const ACHIEVEMENTS = {
+    // Leaderboard
+    champion: {
+        id: 'champion',
+        name: 'The Champion',
+        description: 'Đạt Top 1 Bảng Xếp Hạng',
+        icon: '👑',
+        check: (stats) => false // Manually checked in study.js
+    },
+
     // Newcomer Quest
     newcomer: {
         id: 'newcomer',

@@ -156,6 +156,27 @@ router.post('/:setId/review', auth, async (req, res) => {
             // Check achievements
             const newAchievements = checkAchievements(user);
 
+            // Check for Champion Badge (Top 1)
+            const topUser = await User.findOne()
+                .sort({
+                    'stats.currentStreak': -1,
+                    'stats.totalCardsStudied': -1,
+                    'stats.longestStreak': -1
+                })
+                .select('_id');
+
+            if (topUser && topUser._id.toString() === user._id.toString()) {
+                if (!user.achievements.includes('champion')) {
+                    user.achievements.push('champion');
+                    newAchievements.push({
+                        id: 'champion',
+                        name: 'The Champion',
+                        description: 'Đạt Top 1 Bảng Xếp Hạng',
+                        icon: '👑'
+                    });
+                }
+            }
+
             await user.save();
             await progress.save();
 

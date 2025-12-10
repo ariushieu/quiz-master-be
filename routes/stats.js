@@ -5,12 +5,33 @@ import { ACHIEVEMENTS, SPECIAL_BADGES, getAchievementsStatus, getSpecialBadgesSt
 
 const router = express.Router();
 
+// Helper to check if a user is Top 1
+async function checkIsTop1(userId) {
+    const topUser = await User.findOne()
+        .sort({
+            'stats.currentStreak': -1,
+            'stats.totalCardsStudied': -1,
+            'stats.longestStreak': -1
+        })
+        .select('_id');
+
+    return topUser && topUser._id.toString() === userId.toString();
+}
+
 // Get current user's stats
 router.get('/me', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check for Champion Badge (Top 1)
+        const isTop1 = await checkIsTop1(user._id);
+
+        if (isTop1 && !user.achievements.includes('champion')) {
+            user.achievements.push('champion');
+            await user.save();
         }
 
         res.json({

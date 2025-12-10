@@ -124,7 +124,7 @@ const seedDB = async () => {
             process.exit(0);
         }
 
-        console.log(`✅ Using Admin: ${adminUser.username}`);
+        console.log(`Using Admin: ${adminUser.username}`);
 
 
 
