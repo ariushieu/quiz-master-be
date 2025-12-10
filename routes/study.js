@@ -150,7 +150,8 @@ router.post('/:setId/review', auth, async (req, res) => {
             }
 
             // Track card - streak activates when 10 cards studied today
-            user.trackCardStudied();
+            const { timezoneOffset } = req.body;
+            user.trackCardStudied(timezoneOffset);
 
             // Check achievements
             const newAchievements = checkAchievements(user);
