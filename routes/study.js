@@ -153,40 +153,48 @@ router.post('/:setId/review', auth, async (req, res) => {
             const { timezoneOffset } = req.body;
             user.trackCardStudied(timezoneOffset);
 
-            // Check achievements
-            const newAchievements = checkAchievements(user);
-
-            // Check for Champion Badge (Top 1)
-            const topUser = await User.findOne()
-                .sort({
-                    'stats.currentStreak': -1,
-                    'stats.totalCardsStudied': -1,
-                    'stats.longestStreak': -1
-                })
-                .select('_id');
-
-            if (topUser && topUser._id.toString() === user._id.toString()) {
-                if (!user.achievements.includes('champion')) {
-                    user.achievements.push('champion');
-                    newAchievements.push({
-                        id: 'champion',
-                        name: 'The Champion',
-                        description: 'Đạt Top 1 Bảng Xếp Hạng',
-                        icon: '👑'
-                    });
-                }
-            }
-
-            await user.save();
-            await progress.save();
+            // SAVE DATA FIRST - Respond to client ASAP
+            await Promise.all([user.save(), progress.save()]);
 
             res.json({
                 message: 'Review recorded',
                 nextReviewDate: progress.nextReviewDate,
                 interval: progress.interval,
-                cardsStudiedToday: user.stats.cardsStudiedToday,
-                newAchievements: newAchievements.map(a => ({ id: a.id, name: a.name, icon: a.icon }))
+                cardsStudiedToday: user.stats.cardsStudiedToday
             });
+
+            // NON-BLOCKING BACKGROUND TASKS
+            // Check achievements and Leaderboard significantly slows down the response
+            // so we run it after sending response
+            (async () => {
+                try {
+                    // Check achievements
+                    const newAchievements = checkAchievements(user);
+                    if (newAchievements.length > 0) {
+                        await user.save(); // Save again if achievements unlocked
+                    }
+
+                    // Check for Champion Badge (Top 1)
+                    // Only check if user has high streak or high cards to avoid spamming DB on every newbie click
+                    if ((user.stats.currentStreak > 3 || user.stats.totalCardsStudied > 50) && !user.achievements.includes('champion')) {
+                        const topUser = await User.findOne()
+                            .sort({
+                                'stats.currentStreak': -1,
+                                'stats.totalCardsStudied': -1,
+                                'stats.longestStreak': -1
+                            })
+                            .select('_id');
+
+                        if (topUser && topUser._id.toString() === user._id.toString()) {
+                            user.achievements.push('champion');
+                            await user.save();
+                        }
+                    }
+                } catch (bgError) {
+                    console.error('Background stats update error:', bgError);
+                }
+            })();
+
         } else {
             await progress.save();
             res.json({
