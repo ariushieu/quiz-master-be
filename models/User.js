@@ -169,4 +169,31 @@ userSchema.methods.updateStreak = function (timezoneOffset) {
     this.stats.lastStudyDate = now;
 };
 
+// Check streak on load (read-only mostly, but resets if broken)
+userSchema.methods.checkStreak = function (timezoneOffset) {
+    if (!this.stats.lastStudyDate) return;
+
+    const now = new Date();
+    const todayVals = getValuesInTimezone(now, timezoneOffset);
+    const todayTime = Date.UTC(todayVals.year, todayVals.month, todayVals.day);
+
+    const lastStudy = new Date(this.stats.lastStudyDate);
+    const lastStudyVals = getValuesInTimezone(lastStudy, timezoneOffset);
+    const lastStudyTime = Date.UTC(lastStudyVals.year, lastStudyVals.month, lastStudyVals.day);
+
+    const diffDays = Math.floor((todayTime - lastStudyTime) / (1000 * 60 * 60 * 24));
+
+    // If more than 1 day has passed (e.g., 2 days), streak is broken
+    // 0 = same day
+    // 1 = yesterday (safe, waiting for study)
+    // > 1 = missed at least one day
+    if (diffDays > 1) {
+        this.stats.currentStreak = 0;
+        this.stats.streakUpdatedToday = false;
+    } else if (diffDays === 1) {
+        // New day, reset daily flag
+        this.stats.streakUpdatedToday = false;
+    }
+};
+
 export default mongoose.model('User', userSchema);

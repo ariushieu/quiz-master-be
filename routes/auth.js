@@ -90,7 +90,17 @@ router.post('/login', async (req, res) => {
 
 // Get current user
 router.get('/me', auth, async (req, res) => {
-    res.json(req.user);
+    try {
+        const { timezoneOffset } = req.query;
+        if (timezoneOffset !== undefined) {
+            req.user.checkStreak(parseInt(timezoneOffset));
+            await req.user.save();
+        }
+        res.json(req.user);
+    } catch (error) {
+        console.error('Me error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 export default router;
