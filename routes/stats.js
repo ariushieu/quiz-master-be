@@ -76,27 +76,63 @@ router.get('/achievements', auth, async (req, res) => {
     }
 });
 
+// Helper to calculate real-time streak (check if user missed days)
+function calculateRealStreak(user) {
+    const storedStreak = user.stats?.currentStreak || 0;
+    const lastStudyDate = user.stats?.lastStudyDate;
+
+    if (!lastStudyDate || storedStreak === 0) {
+        return 0;
+    }
+
+    const now = new Date();
+    const lastStudy = new Date(lastStudyDate);
+
+    // Calculate difference in days (using UTC to avoid timezone issues)
+    const nowDay = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    const lastDay = Date.UTC(lastStudy.getUTCFullYear(), lastStudy.getUTCMonth(), lastStudy.getUTCDate());
+    const diffDays = Math.floor((nowDay - lastDay) / (1000 * 60 * 60 * 24));
+
+    // If more than 1 day passed, streak is broken
+    // 0 = today (still valid)
+    // 1 = yesterday (still valid, waiting for today's study)
+    // > 1 = missed at least one day, streak broken
+    if (diffDays > 1) {
+        return 0;
+    }
+
+    return storedStreak;
+}
+
 // Get leaderboard - Top users by STREAK
 router.get('/leaderboard', auth, async (req, res) => {
     try {
         const users = await User.find()
-            .select('username avatar stats.xp stats.totalCardsStudied stats.currentStreak stats.longestStreak achievements')
-            .sort({
-                'stats.currentStreak': -1,
-                'stats.totalCardsStudied': -1,
-                'stats.longestStreak': -1
-            })
-            .limit(20);
+            .select('username avatar stats.xp stats.totalCardsStudied stats.currentStreak stats.longestStreak stats.lastStudyDate achievements')
+            .limit(100); // Get more users to sort after calculating real streak
 
-        const leaderboard = users.map((user, index) => ({
-            rank: index + 1,
+        // Calculate real streak for each user
+        const leaderboardData = users.map(user => ({
             username: user.username,
             avatar: user.avatar,
             xp: user.stats?.xp || 0,
             cardsStudied: user.stats?.totalCardsStudied || 0,
-            streak: user.stats?.currentStreak || 0,
+            streak: calculateRealStreak(user),
             longestStreak: user.stats?.longestStreak || 0,
             achievementsCount: user.achievements?.length || 0
+        }));
+
+        // Sort by real streak (desc), then cardsStudied (desc), then longestStreak (desc)
+        leaderboardData.sort((a, b) => {
+            if (b.streak !== a.streak) return b.streak - a.streak;
+            if (b.cardsStudied !== a.cardsStudied) return b.cardsStudied - a.cardsStudied;
+            return b.longestStreak - a.longestStreak;
+        });
+
+        // Take top 20 and add rank
+        const leaderboard = leaderboardData.slice(0, 20).map((user, index) => ({
+            rank: index + 1,
+            ...user
         }));
 
         res.json(leaderboard);
