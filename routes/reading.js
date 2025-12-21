@@ -36,7 +36,7 @@ router.post('/', auth, admin, async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const passages = await ReadingPassage.find({ isPublic: true })
-            .select('title level topic description createdAt') // Exclude full text/questions for list view
+            .select('title level topic description questions createdAt')
             .sort({ createdAt: -1 });
         res.json(passages);
     } catch (err) {
@@ -54,6 +54,44 @@ router.get('/:id', async (req, res) => {
     } catch (err) {
         console.error('Error in GET /api/reading/:id', err);
         res.status(500).json({ message: err.message });
+    }
+});
+
+// Update passage (Admin only)
+router.put('/:id', auth, admin, async (req, res) => {
+    try {
+        const { title, passageText, level, topic, questions, isPublic } = req.body;
+
+        const updatedPassage = await ReadingPassage.findByIdAndUpdate(
+            req.params.id,
+            { title, passageText, level, topic, questions, isPublic },
+            { new: true }
+        );
+
+        if (!updatedPassage) {
+            return res.status(404).json({ message: 'Passage not found' });
+        }
+
+        res.json(updatedPassage);
+    } catch (err) {
+        console.error('Error in PUT /api/reading/:id', err);
+        res.status(500).json({ message: 'Failed to update passage' });
+    }
+});
+
+// Delete passage (Admin only)
+router.delete('/:id', auth, admin, async (req, res) => {
+    try {
+        const deletedPassage = await ReadingPassage.findByIdAndDelete(req.params.id);
+
+        if (!deletedPassage) {
+            return res.status(404).json({ message: 'Passage not found' });
+        }
+
+        res.json({ message: 'Passage deleted successfully' });
+    } catch (err) {
+        console.error('Error in DELETE /api/reading/:id', err);
+        res.status(500).json({ message: 'Failed to delete passage' });
     }
 });
 
