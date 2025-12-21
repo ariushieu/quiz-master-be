@@ -233,4 +233,28 @@ router.get('/stats/overview', auth, async (req, res) => {
     }
 });
 
+// Track study time
+router.post('/track-time', auth, async (req, res) => {
+    try {
+        const { duration, timezoneOffset } = req.body; // duration in seconds
+        const User = (await import('../models/User.js')).default;
+        const user = await User.findById(req.user._id);
+
+        if (user) {
+            user.trackStudyTime(duration, timezoneOffset);
+            await user.save();
+            res.json({
+                studyTimeToday: user.stats.studyTimeToday,
+                streak: user.stats.currentStreak,
+                weeklyStudyTime: user.stats.weeklyStudyTime
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        console.error('Track time error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 export default router;

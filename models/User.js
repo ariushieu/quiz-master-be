@@ -35,7 +35,12 @@ const userSchema = new mongoose.Schema({
         lastStudyDate: { type: Date, default: null },
         cardsStudiedToday: { type: Number, default: 0 },
         lastCardDate: { type: Date, default: null },
-        streakUpdatedToday: { type: Boolean, default: false }  // Flag to prevent multiple updates
+        streakUpdatedToday: { type: Boolean, default: false }, // Flag to prevent multiple updates
+        studyTimeToday: { type: Number, default: 0 }, // seconds
+        weeklyStudyTime: { type: Number, default: 0 }, // seconds (resets every Monday)
+        totalStudyTime: { type: Number, default: 0 }, // seconds (all-time)
+        lastTimeTrackDate: { type: Date, default: null }, // for time tracking resets
+        lastWeeklyReset: { type: Date, default: null } // tracks when weekly was last reset
     },
     // Avatar URL from Cloudinary
     avatar: {
@@ -125,12 +130,67 @@ userSchema.methods.trackCardStudied = function (timezoneOffset) {
         this.stats.streakUpdatedToday = false;
     }
 
+    // Track card (just for stats now, streak is time-based)
     this.stats.lastCardDate = now;
+};
 
-    // Update streak when reaching 10 cards (only once per day)
-    if (this.stats.cardsStudiedToday >= 10 && !this.stats.streakUpdatedToday) {
+// Track study time (New Streak Logic: 30 mins/day)
+userSchema.methods.trackStudyTime = function (seconds, timezoneOffset) {
+    const now = new Date();
+    const todayVals = getValuesInTimezone(now, timezoneOffset);
+    const todayTime = Date.UTC(todayVals.year, todayVals.month, todayVals.day);
+
+    if (this.stats.lastTimeTrackDate) {
+        const lastTrack = new Date(this.stats.lastTimeTrackDate);
+        const lastTrackVals = getValuesInTimezone(lastTrack, timezoneOffset);
+        const lastTrackTime = Date.UTC(lastTrackVals.year, lastTrackVals.month, lastTrackVals.day);
+
+        if (lastTrackTime === todayTime) {
+            this.stats.studyTimeToday += seconds;
+        } else {
+            // New day - reset daily time
+            this.stats.studyTimeToday = seconds;
+            this.stats.streakUpdatedToday = false;
+        }
+    } else {
+        this.stats.studyTimeToday = seconds;
+        this.stats.streakUpdatedToday = false;
+    }
+
+    // Weekly Reset Logic: Check if we are in a new week compared to last track date
+    // We define a week starting on Monday.
+    const getMonday = (d) => {
+        const date = new Date(d);
+        const day = date.getDay();
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+        date.setDate(diff);
+        date.setHours(0, 0, 0, 0);
+        return date;
+    };
+
+    const lastDate = this.stats.lastTimeTrackDate ? new Date(this.stats.lastTimeTrackDate) : new Date(0);
+    const thisWeekMonday = getMonday(new Date(now.getTime() - (timezoneOffset * 60 * 1000)));
+    const lastTrackMonday = getMonday(new Date(lastDate.getTime() - (timezoneOffset * 60 * 1000)));
+
+    if (thisWeekMonday.getTime() > lastTrackMonday.getTime()) {
+        this.stats.weeklyStudyTime = 0;
+        this.stats.lastWeeklyReset = now;
+    }
+
+    // Accumulate weekly and all-time totals
+    this.stats.weeklyStudyTime += seconds;
+    this.stats.totalStudyTime += seconds;
+
+    this.stats.lastTimeTrackDate = now;
+
+    // Debug logging (Optional: keep strictly for dev, remove for prod)
+    // console.log(`[TrackTime][${this.username}] +${seconds}s | Week: ${this.stats.weeklyStudyTime}s | Total: ${this.stats.totalStudyTime}s`);
+
+    // PRODUCTION: 30 minutes (1800 seconds) per day for +1 streak
+    if (this.stats.studyTimeToday >= 1800 && !this.stats.streakUpdatedToday) {
         this.updateStreak(timezoneOffset);
         this.stats.streakUpdatedToday = true;
+        this.stats.lastStudyDate = now;
     }
 };
 

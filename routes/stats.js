@@ -104,29 +104,27 @@ function calculateRealStreak(user) {
     return storedStreak;
 }
 
-// Get leaderboard - Top users by STREAK
+// Get leaderboard - Top users by WEEKLY STUDY TIME
 router.get('/leaderboard', auth, async (req, res) => {
     try {
         const users = await User.find()
-            .select('username avatar stats.xp stats.totalCardsStudied stats.currentStreak stats.longestStreak stats.lastStudyDate achievements')
-            .limit(100); // Get more users to sort after calculating real streak
+            .select('username avatar stats.weeklyStudyTime stats.totalStudyTime stats.currentStreak stats.longestStreak achievements')
+            .limit(100);
 
-        // Calculate real streak for each user
+        // Map data
         const leaderboardData = users.map(user => ({
             username: user.username,
             avatar: user.avatar,
-            xp: user.stats?.xp || 0,
-            cardsStudied: user.stats?.totalCardsStudied || 0,
-            streak: calculateRealStreak(user),
-            longestStreak: user.stats?.longestStreak || 0,
+            weeklyTime: user.stats?.weeklyStudyTime || 0,
+            totalTime: user.stats?.totalStudyTime || 0,
+            streak: user.stats?.currentStreak || 0,
             achievementsCount: user.achievements?.length || 0
         }));
 
-        // Sort by real streak (desc), then cardsStudied (desc), then longestStreak (desc)
+        // Sort by weekly study time (desc), then totalTime (desc)
         leaderboardData.sort((a, b) => {
-            if (b.streak !== a.streak) return b.streak - a.streak;
-            if (b.cardsStudied !== a.cardsStudied) return b.cardsStudied - a.cardsStudied;
-            return b.longestStreak - a.longestStreak;
+            if (b.weeklyTime !== a.weeklyTime) return b.weeklyTime - a.weeklyTime;
+            return b.totalTime - a.totalTime;
         });
 
         // Take top 20 and add rank
