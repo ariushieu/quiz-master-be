@@ -30,6 +30,9 @@ const questionSchema = new mongoose.Schema({
     },
     groupInstruction: {
         type: String // e.g. "Do the following statements agree with the information..."
+    },
+    subHeading: {
+        type: String // e.g. "Advantages of cork bottle stoppers"
     }
 });
 
