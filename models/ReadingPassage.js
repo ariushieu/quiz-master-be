@@ -3,11 +3,13 @@ import mongoose from 'mongoose';
 const questionSchema = new mongoose.Schema({
     questionText: {
         type: String,
-        required: true
+        required: function() {
+            return this.type !== 'table-completion';
+        }
     },
     type: {
         type: String,
-        enum: ['multiple-choice', 'true-false-not-given', 'fill-in-blank', 'matching'],
+        enum: ['multiple-choice', 'true-false-not-given', 'fill-in-blank', 'matching', 'table-completion'],
         required: true
     },
     options: [{
@@ -15,7 +17,9 @@ const questionSchema = new mongoose.Schema({
     }],
     correctAnswer: {
         type: mongoose.Schema.Types.Mixed, // Can be String or Array depending on type
-        required: true
+        required: function() {
+            return this.type !== 'table-completion';
+        }
     },
     explanation: {
         type: String
@@ -33,6 +37,21 @@ const questionSchema = new mongoose.Schema({
     },
     subHeading: {
         type: String // e.g. "Advantages of cork bottle stoppers"
+    },
+    // For table-completion type
+    tableStructure: {
+        headers: [String], // Column headers
+        rows: [{
+            cells: [{
+                type: {
+                    type: String,
+                    enum: ['text', 'blank']
+                },
+                value: String, // For 'text' type
+                blankId: Number, // For 'blank' type - question number
+                answer: String // For 'blank' type - correct answer
+            }]
+        }]
     }
 });
 
