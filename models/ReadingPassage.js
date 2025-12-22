@@ -48,12 +48,13 @@ const readingPassageSchema = new mongoose.Schema({
     },
     level: {
         type: String,
-        enum: ['Beginner', 'Intermediate', 'Advanced', 'IELTS Band 4.5-5.5', 'IELTS Band 6.0-7.0', 'IELTS Band 7.5+', 'IELTS Passage 1', 'IELTS Passage 2', 'IELTS Passage 3'],
-        default: 'Intermediate'
+        enum: ['Beginner', 'Intermediate', 'Advanced', 'IELTS Band 4.5-5.5', 'IELTS Band 6.0-7.0', 'IELTS Band 7.5+', 'IELTS Passage 1', 'IELTS Passage 2', 'IELTS Passage 3', 'IELTS Reading'],
+        default: 'IELTS Reading'
     },
     topic: {
         type: String,
-        required: true
+        required: false,
+        default: ''
     },
     questions: [questionSchema],
     isPublic: {

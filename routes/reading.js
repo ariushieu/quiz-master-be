@@ -10,8 +10,8 @@ router.post('/', auth, admin, async (req, res) => {
         const { title, passageText, level, topic, questions, isPublic } = req.body;
 
         // Basic validation
-        if (!title || !passageText || !topic) {
-            return res.status(400).json({ message: 'Title, Passage Text, and Topic are required' });
+        if (!title || !passageText) {
+            return res.status(400).json({ message: 'Title and Passage Text are required' });
         }
 
         const newPassage = new ReadingPassage({
