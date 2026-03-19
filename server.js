@@ -10,6 +10,7 @@ import statsRoutes from './routes/stats.js';
 import uploadRoutes from './routes/upload.js';
 import adminRoutes from './routes/admin.js';
 import readingRoutes from './routes/reading.js';
+import grammarRoutes from './routes/grammar.js';
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reading', readingRoutes);
+app.use('/api/grammar', grammarRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

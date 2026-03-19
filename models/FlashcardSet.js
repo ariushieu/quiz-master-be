@@ -8,6 +8,10 @@ const flashcardSchema = new mongoose.Schema({
     definition: {
         type: String,
         required: true
+    },
+    note: {
+        type: String,
+        default: ''
     }
 });
 
